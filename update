@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# git-status
+#
+# iterate over the project submodules and check if there are pending commits or push
+# and show the state of every submodule
+#
+# 02/12/2009 - first version by nelson fernandez - nelson@netflux.com.ar
+# 03/03/2009 - improve to search for submodules - flavio
+#
+
+DIRS=`cat .gitmodules | awk '/path/{print $3}'`
+CURDIR=`pwd`
+green=`tput sgr0; tput setaf 2`
+red=`tput sgr0; tput setaf 1`
+clear=`tput sgr0`
+
+check_status() {
+  modified=`git ls-files -m`
+  unpushed=`git log --pretty="format:%h : %s" HEAD ^origin/master`
+  untrack=`git status --porcelain | grep '??'`
+
+  if [ -n "$modified" ] || [ -n "$untrack" ]; then
+    if [ -n "$modified" ]; then
+      echo "$1 $red ★ modifieds$clear"
+    fi
+    if [ -n "$untrack" ]; then
+      echo "$1 $red ★ untrackeds$clear"
+    fi
+  else
+    echo "$1 $green ⇒ OK $clear"
+  fi
+}
+
+cd $CURDIR
+for d in $DIRS; do
+  cd $d
+  check_status $d
+  cd - > /dev/null
+done
+
+cd $CURDIR
+check_status $CURDIR
+
